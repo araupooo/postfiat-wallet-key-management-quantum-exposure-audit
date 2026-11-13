@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quantum-Resistant PFTL Wallet Key Management Assessment</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  max-width:900px;margin:2em auto;padding:0 1em;color:#111;line-height:1.5}
+h1{font-size:1.6em}h2{font-size:1.25em;margin-top:1.5em}
+table{border-collapse:collapse;width:100%;margin:1em 0}
+th,td{border:1px solid #ccc;padding:.35em .6em;text-align:left;
+  font-size:.92em}th{background:#f0f0f0}
+code{background:#f4f4f4;padding:0 .2em}
+.callout{background:#f7f3e8;border-left:4px solid #b58900;padding:.7em 1em}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em}
+</style>
+</head>
+<body>
+<h1>Quantum-Resistant PFTL Wallet Key Management Assessment</h1>
+<p>Which end-user wallet keys are exposed to a harvest-now adversary,
+which stay hidden behind the 160-bit address hash, and how wallets
+should migrate to post-quantum signatures.</p>
+<p>Pinned tree: postfiatd main
+<code>0085a1ff885d6a446369cf73a4430f75af22be55</code>. Sample: 250 consecutive validated
+ledgers 8024063&ndash;8024312, fetched 2026-11-13T21:59:30Z
+from the public read-only endpoint
+<code>https://rpc.testnet.postfiat.org/</code>. Server: build 1.0.9, network_id 2025,
+validated ledger 8024312.</p>
+
+<div class="callout"><strong>Headline finding.</strong> Every
+transacting account in the sample signs with its <strong>master
+key</strong>: 25 of 25 accounts exposed the
+key their address was derived from, in the clear, on the public
+ledger. No account in the sample used a regular key and none used
+multi-signature. At the same time, 89 of 90
+AccountRoot entries on one sampled ledger-data page never transacted
+in the sample at all — their keys are still hidden behind the 160-bit
+address hash. The exposure is therefore total for active wallets and
+zero for dormant ones, and the fix is rotation plus migration, not
+secrecy: the data is already public.</div>
+
+<h2>Headline numbers</h2>
+<table>
+<tr><th>Measure</th><th>Value</th></tr>
+<tr><td>Ledgers sampled</td><td>250 (8024063&ndash;8024312), 0 missing</td></tr>
+<tr><td>Transactions</td><td>95 (NFTokenBurn 31, NFTokenMint 8, Payment 56)</td></tr>
+<tr><td>Distinct transacting accounts</td><td>25</td></tr>
+<tr><td>Signatures</td><td>95 total — Ed25519 95, secp256k1 0; all Ed25519 signatures 64 bytes</td></tr>
+<tr><td>Classical signature bytes in sample</td><td>6080</td></tr>
+<tr><td>Distinct signing public keys</td><td>25 (Ed25519 25, secp256k1 0)</td></tr>
+<tr><td>Public keys reused across transactions</td><td>21 (max 30 transactions for one key)</td></tr>
+<tr><td>Master key exposed</td><td>25 accounts</td></tr>
+<tr><td>Regular key exposed</td><td>0 accounts</td></tr>
+<tr><td>Multi-signed transactions</td><td>0 (0 signer signatures, 0 distinct signer keys)</td></tr>
+<tr><td>Accounts probed with account_info</td><td>12; with a regular key: 0; master key disabled: 0</td></tr>
+<tr><td>Ledger-data page</td><td>100 entries, 0 SignerList, 0 PayChan with key, 90 AccountRoots of which 89 never transacted in the sample</td></tr>
+<tr><td>Node manifest</td><td>Ephemeral key equals master key: True (the node validates with its master key directly)</td></tr>
+</table>
+
+<h2>Per-mechanism counts</h2>
+<table>
+<tr><th>Mechanism</th><th>Count</th><th>Unit</th><th>Notes</th></tr>
+<tr><td>sampled_ledgers</td><td>250</td><td>ledgers</td><td>consecutive validated ledgers</td></tr>
+<tr><td>transactions</td><td>95</td><td>transactions</td><td>in sampled ledgers</td></tr>
+<tr><td>distinct_accounts</td><td>25</td><td>accounts</td><td>transacted in the sample</td></tr>
+<tr><td>distinct_signing_pubkeys</td><td>25</td><td>public keys</td><td>seen in SigningPubKey fields</td></tr>
+<tr><td>master_key_exposed_accounts</td><td>25</td><td>accounts</td><td>signing pubkey derives to the account id</td></tr>
+<tr><td>regular_key_exposed_accounts</td><td>0</td><td>accounts</td><td>signing pubkey derives to the RegularKey account</td></tr>
+<tr><td>multi_signed_transactions</td><td>0</td><td>transactions</td><td>carry a Signers array</td></tr>
+<tr><td>distinct_signer_pubkeys</td><td>0</td><td>public keys</td><td>in Signers arrays</td></tr>
+<tr><td>accounts_with_regular_key</td><td>0</td><td>accounts</td><td>of those probed with account_info</td></tr>
+<tr><td>accounts_master_key_disabled</td><td>0</td><td>accounts</td><td>lsfDisableMaster set</td></tr>
+<tr><td>signer_list_entries_in_page</td><td>0</td><td>ledger entries</td><td>one ledger_data page</td></tr>
+<tr><td>paychan_key_entries_in_page</td><td>0</td><td>ledger entries</td><td>ltPAYCHAN carrying sfPublicKey</td></tr>
+<tr><td>never_exposed_account_roots_in_page</td><td>89</td><td>accounts</td><td>AccountRoot in page, no tx in sample</td></tr>
+</table>
+
+<h2>Most-used signing keys in the sample</h2>
+<p>Full list: <code>results/key_exposure.csv</code> (25 keys).
+Public keys are public ledger data; the truncated prefix below is
+only for display.</p>
+<table>
+<tr><th>Public key (first 16 hex)</th><th>Type</th><th>Tx count</th>
+<th>Account</th><th>Role</th><th>Sig bytes</th></tr>
+<tr><td><code>ED390F2059B84B25&hellip;</code></td><td>ed25519</td><td>30</td><td>rNoVG2giCxvM5MKm4MfZaimD8ZYDH3TiA2</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED382686F5D4566A&hellip;</code></td><td>ed25519</td><td>6</td><td>rUaCS8TmJy9DmF3uxzBTZ3EsXDfADVcbJA</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED27310B6D72846B&hellip;</code></td><td>ed25519</td><td>5</td><td>rHYJQzTFq9zGkSaHmCL76ieuea46pTwZFZ</td><td>master</td><td>64</td></tr>
+<tr><td><code>EDDA430B03D03126&hellip;</code></td><td>ed25519</td><td>5</td><td>rDRuLc6F9W85WdVCvY1CP9dT1hX2BiX5yU</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED2327E52DEF5561&hellip;</code></td><td>ed25519</td><td>4</td><td>rM5TbMTMdbQaqQh68HHVEwE28TxEuxyYQX</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED810953C4B4029D&hellip;</code></td><td>ed25519</td><td>4</td><td>rUSHW1vNXF5PHdH3GrdLtkXweY4EQ54FMN</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED1C98A1D1DC13DF&hellip;</code></td><td>ed25519</td><td>3</td><td>rwnsPZcaN1sUTd1hEwwNt3CLc9CQMFeqfp</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED30D4F2DD0BE0EE&hellip;</code></td><td>ed25519</td><td>3</td><td>rfdRSNp9tURmma7i1cAYxmSBrThE6raUTh</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED3E212D06DD4945&hellip;</code></td><td>ed25519</td><td>3</td><td>r9qEjJHLHKZ9GqaJjX2t5JTUHyNf5cyfV8</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED77F6B763603F7E&hellip;</code></td><td>ed25519</td><td>3</td><td>rM4y7PduTib1tt7bm6q2LCoV9JeGY7ZeqW</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED88113BF4436187&hellip;</code></td><td>ed25519</td><td>3</td><td>rpb58rGfDgqnm6a4KZ3JdWVdHWxmAS6Xgb</td><td>master</td><td>64</td></tr>
+<tr><td><code>EDB0326C91B4E40B&hellip;</code></td><td>ed25519</td><td>3</td><td>rpx8aQ6tK9NZYjzaFcGC9AV3wH1WUx1vGS</td><td>master</td><td>64</td></tr>
+<tr><td><code>EDD4E6D860C1F0FA&hellip;</code></td><td>ed25519</td><td>3</td><td>r4PAsDxKLi1wVCf6wSNHBSxtKAe4pv44L3</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED01FB1EC9F666AA&hellip;</code></td><td>ed25519</td><td>2</td><td>rBtLY3fbDaJUZ9yKP7LyejpNtciynCbcde</td><td>master</td><td>64</td></tr>
+<tr><td><code>ED08C4E314C68C84&hellip;</code></td><td>ed25519</td><td>2</td><td>rLpyDic5xvSm8DKgu3uV3ftfx4aiKXqPuZ</td><td>master</td><td>64</td></tr>
+</table>
+
+<h2>Migration verdict</h2>
+<p>Migrate wallets to <strong>hybrid classical + ML-DSA-65</strong>
+key pairs (+1,952 B public key, +3,309 B per signature, FIPS 204).
+The master key cannot be changed — rotation means moving to a new
+account, or to a regular key, or to a multi-signature list — so the
+migration is phased: (0) rotate exposed keys to fresh classical keys
+now, (1) ship hybrid wallets, (2) register post-quantum regular keys
+and signer keys, (3) activate the post-quantum amendment, (4) retire
+classical signing. After the activation amendment there is no
+protocol rollback — recovery is forward-only. Full design, costs, and
+open questions: <code>migration_design.md</code>.</p>
+
+<h2>Reproduction</h2>
+<p class="mono">bash run_all.sh</p>
+<p>Regenerates every derived output offline from the vendored sample
+(<code>results/sample_ledger_data.json</code>), rebuilds this page,
+and verifies digests. Expected: exit 0, byte-identical outputs. See
+<code>REPRODUCTION.md</code> for the exact command and recorded
+result, <code>results/run_log.txt</code> for the raw console log, and
+<code>results/digest_check_output.txt</code> for the raw digest-check
+output. Verify digests at any time with
+<code>bash verify_digests.sh --check</code>.</p>
+
+<h2>Files</h2>
+<ul>
+<li><code>key_inventory.csv</code> / <code>key_inventory.md</code> — 21
+wallet key mechanisms with file:line evidence from the pinned tree</li>
+<li><code>exposure_analysis.md</code> — per-mechanism quantum exposure</li>
+<li><code>migration_design.md</code> — hybrid ML-DSA wallet migration</li>
+<li><code>claim_evidence_index.md</code> — every headline claim mapped
+to repo file, field, and line (measured and source-derived claims in
+separate sections)</li>
+<li><code>results/sample_ledger_data.json</code> — vendored raw sample</li>
+<li><code>results/fetch_log.json</code> — per-request fetch record</li>
+<li><code>results/summary.json</code> / <code>summary.txt</code> —
+derived measurements</li>
+<li><code>results/transactions.csv</code>,
+<code>results/key_exposure.csv</code>,
+<code>results/signer_keys.csv</code>,
+<code>results/mechanism_counts.csv</code> — per-record tables</li>
+</ul>
+</body>
+</html>
