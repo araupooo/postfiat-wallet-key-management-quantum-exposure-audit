@@ -1,0 +1,20 @@
+PFTL wallet key-management exposure — sample summary
+Endpoint: https://rpc.testnet.postfiat.org/
+Fetch date (UTC): 2026-11-13T21:59:30Z
+Pinned tree: postfiatd main 0085a1ff885d6a446369cf73a4430f75af22be55
+Server: build 1.0.9, network_id 2025, validated ledger 8024312
+Sample: 250 ledgers requested (8024063-8024312), 250 fetched, 0 missing
+Transactions: 95 total (61 ledgers with transactions, 189 empty)
+Distinct transacting accounts: 25
+Signatures: 95 total (ed25519 95, secp256k1 0)
+Ed25519 signature bytes: {"count": 95, "min": 64, "max": 64, "mean": 64.0}
+secp256k1 signature bytes: {"count": 0, "min": null, "max": null, "mean": null}
+Classical signature bytes total: 6080
+Distinct signing public keys: 25 (ed25519 25, secp256k1 0)
+Public keys reused across transactions: 21 (max 30 tx per key)
+Master key exposed for 25 accounts; regular key exposed for 0
+Multi-signed transactions: 0 (0 signer signatures, 0 distinct signer keys)
+Accounts probed with account_info: 12; with a regular key: 0; master key disabled: 0
+Ledger-data page: 100 entries, 0 SignerList, 0 PayChan with key, 90 AccountRoots of which 89 never transacted in the sample
+Node manifest: ephemeral key equals master key: True
+Tree check: 0085a1ff885d6a446369cf73a4430f75af22be55 (matches pinned: True)

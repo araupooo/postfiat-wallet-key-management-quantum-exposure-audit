@@ -1,0 +1,14 @@
+mechanism,count,unit,notes
+sampled_ledgers,250,ledgers,consecutive validated ledgers
+transactions,95,transactions,in sampled ledgers
+distinct_accounts,25,accounts,transacted in the sample
+distinct_signing_pubkeys,25,public keys,seen in SigningPubKey fields
+master_key_exposed_accounts,25,accounts,signing pubkey derives to the account id
+regular_key_exposed_accounts,0,accounts,signing pubkey derives to the RegularKey account
+multi_signed_transactions,0,transactions,carry a Signers array
+distinct_signer_pubkeys,0,public keys,in Signers arrays
+accounts_with_regular_key,0,accounts,of those probed with account_info
+accounts_master_key_disabled,0,accounts,lsfDisableMaster set
+signer_list_entries_in_page,0,ledger entries,one ledger_data page
+paychan_key_entries_in_page,0,ledger entries,ltPAYCHAN carrying sfPublicKey
+never_exposed_account_roots_in_page,89,accounts,"AccountRoot in page, no tx in sample"

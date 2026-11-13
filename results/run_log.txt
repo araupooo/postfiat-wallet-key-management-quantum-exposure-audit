@@ -1,0 +1,27 @@
+harness.py: offline mode, 250 ledgers, 95 transactions
+harness.py: OK (offline mode, 250 ledgers, 95 transactions, 95 signatures)
+build_derived.py: OK (docs/index.html)
+./README.md: OK
+./assumptions.md: OK
+./build_derived.py: OK
+./claim_evidence_index.md: OK
+./docs/index.html: OK
+./exposure_analysis.md: OK
+./harness.py: OK
+./key_inventory.csv: OK
+./key_inventory.md: OK
+./migration_design.md: OK
+./results/fetch_log.json: OK
+./results/key_exposure.csv: OK
+./results/mechanism_counts.csv: OK
+./results/sample_ledger_data.json: OK
+./results/signer_keys.csv: OK
+./results/summary.json: OK
+./results/summary.txt: OK
+./results/transactions.csv: OK
+./run_all.sh: OK
+./sources.md: OK
+./verify_digests.sh: OK
+verify_digests.sh: SHA256SUMS regenerated and verified
+run_all.sh: OK
+run_all.sh exit code: 0
